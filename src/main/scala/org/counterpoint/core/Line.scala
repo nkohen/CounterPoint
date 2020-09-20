@@ -41,8 +41,10 @@ case class Line(notes: Vector[Note]) extends IndexedSeq[Note] {
             val newEval = for {
               _ <- eval
               _ <- rule(
-                interval == 2 || (lowestNotes && interval == 3),
-                s"A leap may only occur between the lowest notes in a line and may only be a third ($note1, $note2)")
+                interval == 2 || (lowestNotes && interval == 3 && Note
+                  .pitchDiff(note1, note2) < 12),
+                s"A leap may only occur between the lowest notes in a line and may only be a third ($note1, $note2)"
+              )
             } yield Pass
 
             (note2, newEval)

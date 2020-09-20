@@ -117,6 +117,13 @@ case class NormalMeasure(
   }
 }
 
+object NormalMeasure {
+
+  def apply(notes: Vector[Note], givenNote: Note): NormalMeasure = {
+    NormalMeasure(notes(0), notes(1), notes(2), notes(3), givenNote)
+  }
+}
+
 sealed trait FirstMeasure extends Measure
 
 case class NormalFirstMeasure(
