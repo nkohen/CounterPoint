@@ -23,10 +23,19 @@ object Validator {
     }
   }
 
-  // TODO: Validate global rules
   // TODO: Warn about heuristic violations
   // TODO: Read from MusicXML file
   def validate(measures: Vector[Measure]): Evaluation = {
+    measures.zipWithIndex.foreach {
+      case (measure, index) =>
+        if (index != 0) {
+          measure.prevMeasure = measures(index - 1)
+        }
+        if (index != measures.length - 1) {
+          measure.nextMeasure = measures(index + 1)
+        }
+    }
+
     val allNotes = measures.foldLeft(Vector.empty[Note]) {
       case (notes, measure) =>
         notes ++ measure.notes

@@ -187,13 +187,13 @@ object Note {
   }
 
   def isDissonant(note1: Note, note2: Note): Boolean = {
-    val diff = pitchDiff(note1, note2)
+    val diff = pitchDiff(note1, note2) % 12
     interval(note1, note2) match {
       case 2 | 4 | 7                   => true
       case 5 if diff != 7              => true
       case 1 | 8 if diff != 0          => true
-      case 3 if diff != 3 || diff != 4 => true
-      case 6 if diff != 8 || diff != 9 => true
+      case 3 if diff != 3 && diff != 4 => true
+      case 6 if diff != 8 && diff != 9 => true
       case _                           => false
     }
   }

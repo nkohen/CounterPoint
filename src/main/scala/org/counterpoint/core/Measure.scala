@@ -6,8 +6,8 @@ sealed trait Measure {
   def givenNote: Note
   def notes: Vector[Note]
   def validateMeasureRules: Evaluation
-  def prevMeasure: Measure
-  def nextMeasure: Measure
+  var prevMeasure: Measure = _
+  var nextMeasure: Measure = _
 }
 
 object Measure {
@@ -103,9 +103,7 @@ case class NormalMeasure(
     note2: Note,
     note3: Note,
     note4: Note,
-    givenNote: Note,
-    prevMeasure: Measure,
-    nextMeasure: Measure)
+    givenNote: Note)
     extends FourNoteMeasure {
 
   def validateMeasureRules: Evaluation = {
@@ -119,22 +117,14 @@ case class NormalMeasure(
   }
 }
 
-sealed trait FirstMeasure extends Measure {
-
-  override def prevMeasure: Measure =
-    throw new UnsupportedOperationException(
-      "First measure does not have a previous measure")
-
-  override def nextMeasure: NormalMeasure
-}
+sealed trait FirstMeasure extends Measure
 
 case class NormalFirstMeasure(
     note1: Note,
     note2: Note,
     note3: Note,
     note4: Note,
-    givenNote: Note,
-    nextMeasure: NormalMeasure)
+    givenNote: Note)
     extends FirstMeasure
     with FourNoteMeasure {
 
@@ -155,8 +145,7 @@ case class AnacrusisMeasure(
     note2: Note,
     note3: Note,
     note4: Note,
-    givenNote: Note,
-    nextMeasure: NormalMeasure)
+    givenNote: Note)
     extends FirstMeasure
     with MultiNoteMeasure {
   override def notes: Vector[Note] = Vector(note2, note3, note4)
@@ -172,14 +161,11 @@ case class AnacrusisMeasure(
 }
 
 sealed trait PenultimateMeasure extends Measure {
-  override def nextMeasure: FinalMeasure
-  override def prevMeasure: NormalMeasure
-  lazy val lastNote: Note = nextMeasure.note
+  lazy val lastNote: Note = nextMeasure.notes.head
   def noteBeforeLast: Note
   def twoBeforeLast: Note
 
   def validatePenultimateRules: Evaluation = {
-    val lastNote = nextMeasure.note
     val lastNoteIsE = lastNote.pitchClass == 4
     lazy val wholeStepBeneathLast = Note(lastNote.id - 2)
     for {
@@ -191,7 +177,7 @@ sealed trait PenultimateMeasure extends Measure {
         s"Second to last note ($noteBeforeLast) must be half step beneath final note ($lastNote)")
       _ <- rule(
         lastNoteIsE || !notes.contains(wholeStepBeneathLast),
-        s"Penultimate measure cannot contain a $wholeStepBeneathLast when the last note is a ${nextMeasure.note}"
+        s"Penultimate measure cannot contain a $wholeStepBeneathLast when the last note is a $lastNote"
       )
       _ <- rule(
         lastNote.pitchClass != 9 || twoBeforeLast != Note(lastNote.octave, 5),
@@ -206,9 +192,7 @@ case class PenultimateNormalMeasure(
     note2: Note,
     note3: Note,
     note4: Note,
-    givenNote: Note,
-    prevMeasure: NormalMeasure,
-    nextMeasure: FinalMeasure)
+    givenNote: Note)
     extends PenultimateMeasure
     with FourNoteMeasure {
 
@@ -227,15 +211,11 @@ case class PenultimateNormalMeasure(
   }
 }
 
-case class PenultimateSingletonMeasure(
-    note: Note,
-    givenNote: Note,
-    prevMeasure: NormalMeasure,
-    nextMeasure: FinalMeasure)
+case class PenultimateSingletonMeasure(note: Note, givenNote: Note)
     extends PenultimateMeasure
     with WholeNoteMeasure {
   override val noteBeforeLast: Note = note
-  override val twoBeforeLast: Note = prevMeasure.note4
+  override val twoBeforeLast: Note = prevMeasure.notes.last
 
   override def validateMeasureRules: Evaluation = {
     for {
@@ -245,15 +225,7 @@ case class PenultimateSingletonMeasure(
   }
 }
 
-case class FinalMeasure(
-    note: Note,
-    givenNote: Note,
-    prevMeasure: PenultimateMeasure)
-    extends WholeNoteMeasure {
-
-  override def nextMeasure: Measure =
-    throw new UnsupportedOperationException(
-      "Final measure does not have a next measure")
+case class FinalMeasure(note: Note, givenNote: Note) extends WholeNoteMeasure {
 
   override def validateMeasureRules: Evaluation = {
     for {
