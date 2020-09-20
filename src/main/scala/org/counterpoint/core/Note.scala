@@ -1,18 +1,162 @@
 package org.counterpoint.core
 
-sealed trait Note {
+sealed trait Note extends Ordered[Note] {
   def pitchClass: Int
   def octave: Int
 
   def letterNumber: Int
 
-  def id: Int = 12 * octave + pitchClass
+  lazy val id: Int = 12 * octave + pitchClass
+
+  override def compare(other: Note): Int = {
+    this.id - other.id
+  }
+
+  def consonantWith(other: Note): Boolean = {
+    Note.isConsonant(this, other)
+  }
+
+  def dissonantWith(other: Note): Boolean = {
+    Note.isDissonant(this, other)
+  }
+
+  def legalDissonantWith(
+      givenNote: Note,
+      lastNote: Note,
+      nextNote1: Note,
+      nextNote2: Note,
+      nextNote3: Note): Boolean = {
+    if (dissonantWith(givenNote)) {
+      val singleStepFromNeighbors =
+        intervalWith(lastNote) == 2 && intervalWith(nextNote1) == 2
+
+      val isMonotonic =
+        (lastNote < this && this < nextNote1) ||
+          (lastNote > this && this > nextNote1)
+      val isPassingTone =
+        isMonotonic && singleStepFromNeighbors
+
+      lazy val isLowerNeighborNote =
+        lastNote > this && nextNote1 > this && singleStepFromNeighbors
+
+      lazy val isNC =
+        lastNote > this &&
+          this > nextNote1 &&
+          nextNote1 < nextNote2 &&
+          nextNote2 < nextNote3 &&
+          intervalWith(lastNote) == 2 &&
+          intervalWith(nextNote1) == 3 &&
+          nextNote1.intervalWith(nextNote2) == 2 &&
+          nextNote2.intervalWith(nextNote3) == 2
+
+      isPassingTone || isLowerNeighborNote || isNC
+    } else false
+  }
+
+  def isPeak(lastNote: Note, nextNote: Note): Boolean = {
+    lastNote < this && nextNote < this
+  }
+
+  def tritoneWith(other: Note): Boolean = {
+    Note.isTritone(this, other)
+  }
+
+  def intervalWith(other: Note): Int = {
+    Note.interval(this, other)
+  }
 }
 
 object Note {
 
+  def apply(id: Int): Note = {
+    val octave = id / 12
+    val pitchClass = id % 12
+
+    Note(octave, pitchClass)
+  }
+
+  def apply(octave: Int, pitchClass: Int): Note = {
+    octave match {
+      case 2 =>
+        pitchClass match {
+          case 0  => C2
+          case 1  => C2Sharp
+          case 2  => D2
+          case 3  => E2Flat
+          case 4  => E2
+          case 5  => F2
+          case 6  => F2Sharp
+          case 7  => G2
+          case 8  => G2Sharp
+          case 9  => A2
+          case 10 => B2Flat
+          case 11 => B2
+        }
+      case 3 =>
+        pitchClass match {
+          case 0  => C3
+          case 1  => C3Sharp
+          case 2  => D3
+          case 3  => E3Flat
+          case 4  => E3
+          case 5  => F3
+          case 6  => F3Sharp
+          case 7  => G3
+          case 8  => G3Sharp
+          case 9  => A3
+          case 10 => B3Flat
+          case 11 => B3
+        }
+      case 4 =>
+        pitchClass match {
+          case 0  => C4
+          case 1  => C4Sharp
+          case 2  => D4
+          case 3  => E4Flat
+          case 4  => E4
+          case 5  => F4
+          case 6  => F4Sharp
+          case 7  => G4
+          case 8  => G4Sharp
+          case 9  => A4
+          case 10 => B4Flat
+          case 11 => B4
+        }
+      case 5 =>
+        pitchClass match {
+          case 0  => C5
+          case 1  => C5Sharp
+          case 2  => D5
+          case 3  => E5Flat
+          case 4  => E5
+          case 5  => F5
+          case 6  => F5Sharp
+          case 7  => G5
+          case 8  => G5Sharp
+          case 9  => A5
+          case 10 => B5Flat
+          case 11 => B5
+        }
+      case 6 =>
+        pitchClass match {
+          case 0  => C6
+          case 1  => C6Sharp
+          case 2  => D6
+          case 3  => E6Flat
+          case 4  => E6
+          case 5  => F6
+          case 6  => F6Sharp
+          case 7  => G6
+          case 8  => G6Sharp
+          case 9  => A6
+          case 10 => B6Flat
+          case 11 => B6
+        }
+    }
+  }
+
   def interval(note1: Note, note2: Note): Int = {
-    val (highNote, lowNote) = if (note1.id > note2.id) {
+    val (highNote, lowNote) = if (note1 > note2) {
       (note1, note2)
     } else {
       (note2, note1)
@@ -64,95 +208,95 @@ object Note {
 }
 
 sealed trait C extends Note {
-  override def pitchClass: Int = 0
+  override lazy val pitchClass: Int = 0
 
-  override def letterNumber: Int = 0
+  override lazy val letterNumber: Int = 0
 }
 
 sealed trait CSharp extends Note {
-  override def pitchClass: Int = 1
+  override lazy val pitchClass: Int = 1
 
-  override def letterNumber: Int = 0
+  override lazy val letterNumber: Int = 0
 }
 
 sealed trait D extends Note {
-  override def pitchClass: Int = 2
+  override lazy val pitchClass: Int = 2
 
-  override def letterNumber: Int = 1
+  override lazy val letterNumber: Int = 1
 }
 
 sealed trait EFlat extends Note {
-  override def pitchClass: Int = 3
+  override lazy val pitchClass: Int = 3
 
-  override def letterNumber: Int = 2
+  override lazy val letterNumber: Int = 2
 }
 
 sealed trait E extends Note {
-  override def pitchClass: Int = 4
+  override lazy val pitchClass: Int = 4
 
-  override def letterNumber: Int = 2
+  override lazy val letterNumber: Int = 2
 }
 
 sealed trait F extends Note {
-  override def pitchClass: Int = 5
+  override lazy val pitchClass: Int = 5
 
-  override def letterNumber: Int = 3
+  override lazy val letterNumber: Int = 3
 }
 
 sealed trait FSharp extends Note {
-  override def pitchClass: Int = 6
+  override lazy val pitchClass: Int = 6
 
-  override def letterNumber: Int = 3
+  override lazy val letterNumber: Int = 3
 }
 
 sealed trait G extends Note {
-  override def pitchClass: Int = 7
+  override lazy val pitchClass: Int = 7
 
-  override def letterNumber: Int = 4
+  override lazy val letterNumber: Int = 4
 }
 
 sealed trait GSharp extends Note {
-  override def pitchClass: Int = 8
+  override lazy val pitchClass: Int = 8
 
-  override def letterNumber: Int = 4
+  override lazy val letterNumber: Int = 4
 }
 
 sealed trait A extends Note {
-  override def pitchClass: Int = 9
+  override lazy val pitchClass: Int = 9
 
-  override def letterNumber: Int = 5
+  override lazy val letterNumber: Int = 5
 }
 
 sealed trait BFlat extends Note {
-  override def pitchClass: Int = 10
+  override lazy val pitchClass: Int = 10
 
-  override def letterNumber: Int = 6
+  override lazy val letterNumber: Int = 6
 }
 
 sealed trait B extends Note {
-  override def pitchClass: Int = 11
+  override lazy val pitchClass: Int = 11
 
-  override def letterNumber: Int = 6
+  override lazy val letterNumber: Int = 6
 }
 
 sealed trait Octave2Note extends Note {
-  override def octave: Int = 2
+  override lazy val octave: Int = 2
 }
 
 sealed trait Octave3Note extends Note {
-  override def octave: Int = 3
+  override lazy val octave: Int = 3
 }
 
 sealed trait Octave4Note extends Note {
-  override def octave: Int = 4
+  override lazy val octave: Int = 4
 }
 
 sealed trait Octave5Note extends Note {
-  override def octave: Int = 5
+  override lazy val octave: Int = 5
 }
 
 sealed trait Octave6Note extends Note {
-  override def octave: Int = 6
+  override lazy val octave: Int = 6
 }
 
 case object C2 extends C with Octave2Note
